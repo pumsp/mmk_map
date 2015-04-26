@@ -6,9 +6,15 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.support.v4.widget.DrawerLayout;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.AttributeSet;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.*;
@@ -29,6 +35,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Locale;
+
 
 public class MyActivity extends ActionBarActivity implements OnMapReadyCallback{
 
@@ -37,6 +46,7 @@ public class MyActivity extends ActionBarActivity implements OnMapReadyCallback{
     private DrawerLayout mDrawerLayout;
     private ListView mListView;
     private View mView;
+    private ArrayAdapter<String> adapter;
 
     /// map
     private String ip;
@@ -48,12 +58,27 @@ public class MyActivity extends ActionBarActivity implements OnMapReadyCallback{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_my);
+        setContentView(R.layout.dorm_layout);
 
 
-        // web teach seach in listView http://www.androprogrammer.com/2014/02/add-searching-in-list-view.html
+
         try{
-            mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+            // Inflate the drawer_layout
+            LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            //DrawerLayout drawer = (DrawerLayout) inflater.inflate(R.layout.drawer_layout, null);
+            mDrawerLayout = (DrawerLayout) inflater.inflate(R.layout.activity_my,null);
+
+            ViewGroup decor = (ViewGroup) getWindow().getDecorView();
+            View child = decor.getChildAt(0);
+            decor.removeView(child);
+
+            // This is the container we defined just now.
+            FrameLayout container = (FrameLayout) mDrawerLayout.findViewById(R.id.container);
+            container.addView(child);
+
+            // Make the drawer replace the first child
+            decor.addView(mDrawerLayout);
+
             mListView = (ListView) findViewById(R.id.drawer_list);
             mView =  findViewById(R.id.drawer_linear);
 
@@ -83,6 +108,43 @@ public class MyActivity extends ActionBarActivity implements OnMapReadyCallback{
                     showDialog(name);
                 }
             });
+
+            final EditText search_filter = (EditText) findViewById(R.id.search_filter);
+            search_filter.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    String text = search_filter.getText().toString();
+                    ArrayList<String> ar_tit = new ArrayList<String>();
+                    if (text.length() != 0){
+                        for (String title : mDrawerTitle)
+                        {
+                            if (title.contains(text))
+                            {
+                                ar_tit.add(title);
+                            }
+                        }
+                        adapter = new ArrayAdapter<String>(MyActivity.this,
+                                android.R.layout.simple_list_item_1, ar_tit);
+                        Log.w("search",""+text);
+                        mListView.setAdapter(adapter);
+                    }
+                    else{
+                        adapter = new ArrayAdapter<String>(MyActivity.this,
+                                android.R.layout.simple_list_item_1, mDrawerTitle);
+                        mListView.setAdapter(adapter);
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+
+                }
+            });
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -95,6 +157,8 @@ public class MyActivity extends ActionBarActivity implements OnMapReadyCallback{
         getMenuInflater().inflate(R.menu.menu_my, menu);
         return true;
     }
+
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -272,7 +336,7 @@ public class MyActivity extends ActionBarActivity implements OnMapReadyCallback{
 
                     }
                     //set drawer list view
-                    ArrayAdapter<String> adapter = new ArrayAdapter<String>(MyActivity.this,
+                    adapter = new ArrayAdapter<String>(MyActivity.this,
                             android.R.layout.simple_list_item_1, mDrawerTitle);
 
                     mListView.setAdapter(adapter);
